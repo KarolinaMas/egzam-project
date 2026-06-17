@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="ExamProject.API/ExamProject.API.csproj" />
+  <Project Path="ExamProject.Data/ExamProject.Data.csproj" />
+  <Project Path="ExamProject.Entities/ExamProject.Entities.csproj" />
+  <Project Path="ExamProject.Services/ExamProject.Services.csproj" />
+</Solution>
