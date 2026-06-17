@@ -14,7 +14,6 @@ Prieš paleidžiant projektą įsitikinkite, kad turit:
 
 * [.NET 10 SDK](https://dotnet.microsoft.com/)
 * [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-* (nebūtina) Postman arba Swagger testavimui
 
 ---
 
@@ -85,6 +84,22 @@ Paleidus API, Entity Framework automatiškai:
 * pritaiko migrations
 * sukuria lenteles
 * atnaujina DB struktūrą
+
+---
+## 7. Frontend paleidimas
+
+Atsidarius termanale frontend direktorija paleisti šias komandas:
+```bash
+npm install
+npm run dev
+```
+
+
+---
+# Kaip sustabdyti projektą
+
+1. docker compose down
+2. egzam-project\backend\ExamProject.API> ^C
 
 ---
 
