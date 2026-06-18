@@ -86,16 +86,6 @@ Paleidus API, Entity Framework automatiškai:
 * atnaujina DB struktūrą
 
 ---
-## 7. Frontend paleidimas
-
-Atsidarius termanale frontend direktorija paleisti šias komandas:
-```bash
-npm install
-npm run dev
-```
-
-
----
 # Kaip sustabdyti projektą
 
 1. docker compose down
@@ -103,7 +93,7 @@ npm run dev
 
 ---
 
-## 🔐 Autentifikacija (JWT)
+## Autentifikacija (JWT)
 
 Prisijungimas vyksta per JWT token:
 
@@ -117,7 +107,7 @@ Authorization: Bearer <token>
 
 ---
 
-## 🧱 Projekto architektūra
+## Projekto architektūra
 
 ```
 Controllers → Services → Entity Framework → MySQL
@@ -132,14 +122,14 @@ Sluoksniai:
 
 ---
 
-## 🐳 Docker Compose paslaugos
+## Docker Compose paslaugos
 
 * MySQL (3306)
 * phpMyAdmin (8080)
 
 ---
 
-## ⚡ Greitas paleidimas (viena komanda)
+## Greitas paleidimas (viena komanda)
 
 ```bash
 docker compose up -d && dotnet run
@@ -147,6 +137,6 @@ docker compose up -d && dotnet run
 
 ---
 
-## 👨‍💻 Autorius
+## Autorius
 
 Karolina Maščinskaitė
