@@ -15,8 +15,7 @@ namespace ExamProject.Services
             _context = context;
             _passwordHasher = passwordHasher;
         }
-
-        public async Task<int> AddAsync(string userName, string email, string password)
+        public async Task<int> AddAsync(string userName, string email, string password, string role = "user")
         {
             if (await _context.Users.AnyAsync(u => u.UserName == userName))
                 throw new ArgumentException("Username is already taken.");
@@ -28,7 +27,7 @@ namespace ExamProject.Services
             {
                 UserName = userName,
                 Email = email,
-                Role = "user",
+                Role = role, 
                 CreatedAt = DateTime.UtcNow,
             };
 
@@ -51,6 +50,11 @@ namespace ExamProject.Services
 
             var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
             return result == PasswordVerificationResult.Success ? user : null;
+        }
+
+        public async Task<User?> GetByEmailAsync(string email)
+        {
+            return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         }
 
         public async Task<bool> DeleteAsync(int id)

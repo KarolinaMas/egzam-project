@@ -62,6 +62,25 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
+
+    var adminEmail = "admin@admin.com";
+
+    var existingAdmin = await userService.GetByEmailAsync(adminEmail);
+
+    if (existingAdmin == null)
+    {
+        await userService.AddAsync(
+            "admin",
+            adminEmail,
+            "Admin123!",
+            "admin" 
+        );
+    }
+}
+
 app.UseExceptionHandler(errorApp =>
 {
     errorApp.Run(async context =>

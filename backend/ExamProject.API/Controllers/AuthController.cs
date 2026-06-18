@@ -24,7 +24,8 @@ namespace ExamProject.API.Controllers
             var userId = await _userService.AddAsync(
                 request.UserName,
                 request.Email,
-                request.Password
+                request.Password,
+                "user"
             );
             return Created("/", new { userId });
         }
