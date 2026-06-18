@@ -10,6 +10,8 @@ namespace ExamProject.Data
 
         public DbSet<User> Users { get; set; }
 
+        public DbSet<TaskItem> Tasks { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -22,6 +24,21 @@ namespace ExamProject.Data
                 o.HasIndex(e => e.Email).IsUnique();
                 o.Property(e => e.PasswordHash).IsRequired();
                 o.Property(e => e.Role).IsRequired();
+            });
+
+             modelBuilder.Entity<TaskItem>(o =>
+            {
+                o.ToTable("task");
+                o.HasKey(e => e.Id);
+                o.Property(e => e.Title).IsRequired().HasMaxLength(100);
+                o.Property(e => e.Description).HasMaxLength(2000);
+                o.Property(e => e.IsComplete).HasDefaultValue(false);
+                o.Property(e => e.CreatedAt).ValueGeneratedOnAdd();
+                o.HasOne(t => t.User)
+                    .WithMany(u => u.Tasks)
+                    .HasForeignKey(t => t.UserId)
+                    .IsRequired()
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

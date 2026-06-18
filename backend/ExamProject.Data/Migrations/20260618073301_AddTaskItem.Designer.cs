@@ -4,6 +4,7 @@ using ExamProject.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ExamProject.Data.Migrations
 {
     [DbContext(typeof(ExamProjectDbContext))]
-    partial class ExamProjectDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260618073301_AddTaskItem")]
+    partial class AddTaskItem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -60,7 +63,7 @@ namespace ExamProject.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("task", (string)null);
+                    b.ToTable("Tasks");
                 });
 
             modelBuilder.Entity("ExamProject.Entities.User", b =>
