@@ -63,13 +63,13 @@ arba terminale bus nurodomas kitas localhost port
 
 ---
 
-## 5. Postman (API Testing)
+## 5. Postman (API testavimas)
 
-If you do not have Postman installed, download and install the Postman Desktop App.
+Jei neturite įsidiegę **Postman Desktop App**, atsisiųskite ir įdiekite ją.
 
-You can use Postman to test all available API endpoints.
+Naudodami Postman galite testuoti visus API endpoint'us.
 
-### User Registration
+### Vartotojo registracija
 
 **Endpoint:**
 
@@ -87,7 +87,7 @@ POST /api/auth/register
 }
 ```
 
-### User Login
+### Vartotojo prisijungimas
 
 **Endpoint:**
 
@@ -104,13 +104,13 @@ POST /api/auth/login
 }
 ```
 
-After a successful login, the API returns a JWT token. Copy only the token value and include it in the `Authorization` header for all protected endpoints:
+Po sėkmingo prisijungimo gausite JWT tokeną. Nukopijuokite tik jo reikšmę ir pridėkite ją prie visų apsaugotų užklausų (`request`) antraštės (`Header`) lauke:
 
 ```text
-Authorization: Bearer <your_token>
+Authorization: Bearer <jūsų_tokenas>
 ```
 
-### Create a Task
+### Užduoties (Task) sukūrimas
 
 **Endpoint:**
 
@@ -127,7 +127,7 @@ POST /api/TaskItem
 }
 ```
 
-### Get Task by ID
+### Užduoties gavimas pagal ID
 
 **Endpoint:**
 
@@ -135,7 +135,7 @@ POST /api/TaskItem
 GET /api/TaskItem/{id}
 ```
 
-### Get All Tasks (Paginated)
+### Visų užduočių gavimas su puslapiavimu
 
 **Endpoint:**
 
@@ -143,7 +143,7 @@ GET /api/TaskItem/{id}
 GET /api/TaskItem/pages/{page}/{itemsPerPage}
 ```
 
-### Update a Task
+### Užduoties atnaujinimas
 
 **Endpoint:**
 
@@ -161,14 +161,13 @@ PUT /api/TaskItem/{id}
 }
 ```
 
-### Delete a Task
+### Užduoties ištrynimas
 
 **Endpoint:**
 
 ```http
 DELETE /api/TaskItem/{id}
 ```
-
 
 ## 6. Unit test paleidimas
 
