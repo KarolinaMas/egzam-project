@@ -1,4 +1,8 @@
-# Exam Project
+# Exam Project https://github.com/KarolinaMas/egzam-project
+
+```bash
+git clone httpsUrlIšDirektorijos
+```
 
 # Kaip paleisti projektą
 
