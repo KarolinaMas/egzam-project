@@ -118,6 +118,51 @@ namespace ExamProject.Services
                 .ToListAsync();
         }
 
+        public async Task<AdminLatestTaskDto?> GetLatestTaskByUserIdAsync(int userId)
+        {
+            var task = await _context.Tasks
+                .Include(t => t.User)
+                .Where(t => t.UserId == userId)
+                .OrderByDescending(t => t.UpdatedAt > t.CreatedAt ? t.UpdatedAt : t.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (task == null)
+                return null;
+
+            return new AdminLatestTaskDto
+            {
+                UserId = task.UserId,
+                UserEmail = task.User.Email,
+
+                TaskId = task.Id,
+                Title = task.Title,
+                IsComplete = task.IsComplete,
+
+                LastActivity = task.UpdatedAt > task.CreatedAt
+                    ? task.UpdatedAt
+                    : task.CreatedAt
+            };
+        }
+
+        public async Task<bool> DeleteLatestTaskByUserIdAsync(int userId)
+        {
+            var latestTask = await _context.Tasks
+                .Where(t => t.UserId == userId)
+                .OrderByDescending(t =>
+                    t.UpdatedAt > t.CreatedAt ? t.UpdatedAt : t.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (latestTask == null)
+            {
+                return false;
+            }
+
+            _context.Tasks.Remove(latestTask);
+
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
         
     }
 }

@@ -15,5 +15,7 @@ namespace ExamProject.Services
         Task<bool> DeleteAsync(int userId, int id);
         Task<List<AdminTaskItemDto>> GetAllAdminAsync();
         Task<List<AdminTaskItemDto>> GetByUserIdAsync(int userId);
+        Task<AdminLatestTaskDto?> GetLatestTaskByUserIdAsync(int userId);
+        Task<bool> DeleteLatestTaskByUserIdAsync(int userId);
     }
 }

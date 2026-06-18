@@ -30,5 +30,29 @@ namespace ExamProject.API.Controllers
             return Ok(result);
         }
 
+        [HttpGet("latest/{userId:int}")]
+        public async Task<IActionResult> GetLatestByUser(int userId)
+        {
+            var result = await _service.GetLatestTaskByUserIdAsync(userId);
+
+            if (result == null)
+                return NotFound();
+
+            return Ok(result);
+        }
+
+        [HttpDelete("latest/{userId:int}")]
+        public async Task<IActionResult> DeleteLatestTask(int userId)
+        {
+            var deleted = await _service.DeleteLatestTaskByUserIdAsync(userId);
+
+            if (!deleted)
+            {
+                return NotFound();
+            }
+
+            return NoContent();
+        }
+
     }
 }
