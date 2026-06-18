@@ -13,5 +13,7 @@ namespace ExamProject.Services
         Task<TaskItem?> UpdateAsync(int userId, int id, UpdateTaskItemDto dto);
 
         Task<bool> DeleteAsync(int userId, int id);
+        Task<List<AdminTaskItemDto>> GetAllAdminAsync();
+        Task<List<AdminTaskItemDto>> GetByUserIdAsync(int userId);
     }
 }

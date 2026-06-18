@@ -84,5 +84,40 @@ namespace ExamProject.Services
 
             return deletedRows > 0;
         }
+
+        public async Task<List<AdminTaskItemDto>> GetAllAdminAsync()
+        {
+            return await _context.Tasks
+                .Include(t => t.User)
+                .Select(t => new AdminTaskItemDto
+                {
+                    Id = t.Id,
+                    Title = t.Title,
+                    Description = t.Description,
+                    IsComplete = t.IsComplete,
+                    UserId = t.UserId,
+                    UserEmail = t.User.Email
+                })
+                .ToListAsync();
+        }
+
+        public async Task<List<AdminTaskItemDto>> GetByUserIdAsync(int userId)
+        {
+            return await _context.Tasks
+                .Include(t => t.User)
+                .Where(t => t.UserId == userId)
+                .Select(t => new AdminTaskItemDto
+                {
+                    Id = t.Id,
+                    Title = t.Title,
+                    Description = t.Description,
+                    IsComplete = t.IsComplete,
+                    UserId = t.UserId,
+                    UserEmail = t.User.Email
+                })
+                .ToListAsync();
+        }
+
+        
     }
 }
