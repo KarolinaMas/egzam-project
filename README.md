@@ -1,10 +1,4 @@
-# 📦 Exam Project – project name
-
-## 🧾 Aprašymas
-
-...
-
----
+# Exam Project
 
 # Kaip paleisti projektą
 
@@ -19,7 +13,7 @@ Prieš paleidžiant projektą įsitikinkite, kad turit:
 
 ## 2. Duomenų bazės paleidimas (Docker)
 
-Projekto root kataloge paleisk:
+Projekto root kataloge paleiskite:
 
 ```bash
 docker compose up -d
@@ -50,41 +44,70 @@ Prisijungimas:
 
 ## 4. Backend API paleidimas
 
-Eik į backend projekto folderį ir paleisk:
+Eikite į backend projekto folderį ir paleiskite:
 
 ```bash
-dotnet restore
 dotnet run
 ```
 
 API bus pasiekiamas:
 
 ```
-https://localhost:5001
+[https://localhost:5001](http://localhost:5087)
+arba terminale bus nurodomas kitas localhost port
 ```
 
 ---
 
-## 5. Swagger (API testavimas)
+## 5. Postman (API testavimas)
 
-Atidaryk:
+Jei neturite atsisiusti Postman desktop app
 
-```
-https://localhost:5001/swagger
-```
+Čia gali testuoti visus endpointus 
+Registracija: 
+POST /api/auth/register
+body: {
+  "userName": "string",
+  "email": "string",
+  "password": "string"
+}
+Login:
+POST /api/auth/login
+body: {
+  "email": "string",
+  "password": "string"
+} 
 
-Čia gali testuoti visus endpointus.
+Prisijungus gausime token, nusikopijuojam tik jo reikšmę ir dedam į kitų request header key laukelyje pažymėdami Authorization, value lauke Bearer nukopijuotaTokenReikšmė
+Task sukūrimas: 
+POST /api/TaskItem
+body: {
+  "title": "Task title",
+  "description": "Task description"
+}
+Task gavima pagal Id:
+GET /api/TaskItem/{id}
 
+Visų task gavimas puslapiuose:
+GET /api/TaskItem/pages/{page}/{itemsPerPage}
+Task atnaujinimas:
+PUT /api/TaskItem/{id}
+body: {
+  "title": "Updated title",
+  "description": "Updated description",
+  "isCompleted": true
+}
+Task ištrynimas: 
+DELETE /api/TaskItem/{id}
 ---
 
-## 6. Duomenų bazės inicializacija
+## 6. Unit test paleidimas
 
-Paleidus API, Entity Framework automatiškai:
+ExamProject.Services.Tests aplankale atsidarius komandinę eilute paleiskite
 
-* pritaiko migrations
-* sukuria lenteles
-* atnaujina DB struktūrą
-
+```bash
+dotnet test
+```
 ---
 # Kaip sustabdyti projektą
 
