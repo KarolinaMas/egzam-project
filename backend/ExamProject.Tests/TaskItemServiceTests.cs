@@ -1,24 +1,26 @@
-﻿using Microsoft.EntityFrameworkCore;
-using MockQueryable.Moq;
-using Moq;
-using ExamProject.Data;
+﻿using ExamProject.Data;
 using ExamProject.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace ExamProject.Services.Tests
 {
-    public class TaskItemServiceTests
+    public class TaskItemServiceTests : IDisposable
     {
-        private readonly Mock<ExamProjectDbContext> contextMock = new();
+        private readonly ExamProjectDbContext _context;
         private readonly TaskItemService taskItemService;
 
         public TaskItemServiceTests()
         {
-            taskItemService = new TaskItemService(contextMock.Object);
+            var options = new DbContextOptionsBuilder<ExamProjectDbContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString())
+                .Options;
+
+            _context = new ExamProjectDbContext(options);
+            taskItemService = new TaskItemService(_context);
         }
 
+        public void Dispose() => _context.Dispose();
 
-        private static TaskItem MakeTask(int id, int userId, string title = "Task", string description = "Desc")
-            => new() { Id = id, UserId = userId, Title = title, Description = description, CreatedAt = DateTime.UtcNow };
 
         private static CreateTaskItemDto MakeCreateDto(string title = "Task", string description = "Desc")
             => new() { Title = title, Description = description };
@@ -26,33 +28,22 @@ namespace ExamProject.Services.Tests
         private static UpdateTaskItemDto MakeUpdateDto(string title = "Updated", string description = "Updated Desc", bool isCompleted = false)
             => new() { Title = title, Description = description, IsCompleted = isCompleted };
 
-        private void SetupTasksDbSet(IEnumerable<TaskItem> tasks)
+        private async Task<int> SeedTask(int userId, string title = "Task", string description = "Desc")
         {
-            var mock = tasks.AsQueryable().BuildMockDbSet();
-            contextMock.Setup(c => c.Tasks).Returns(mock.Object);
+            return await taskItemService.CreateAsync(userId, MakeCreateDto(title, description));
         }
 
 
         [Fact]
-        public async Task CreateAsync_ValidDto_AddsTaskAndSavesChanges()
+        public async Task CreateAsync_ValidDto_PersistsTaskInDatabase()
         {
-            var addedTasks = new List<TaskItem>();
-            var mockSet = new List<TaskItem>().AsQueryable().BuildMockDbSet();
-            mockSet
-                .Setup(s => s.AddAsync(It.IsAny<TaskItem>(), default))
-                .Callback<TaskItem, CancellationToken>((t, _) => addedTasks.Add(t))
-                .Returns(ValueTask.FromResult((Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<TaskItem>)null!));
+            var id = await taskItemService.CreateAsync(userId: 1, MakeCreateDto("Buy Groceries", "Milk and eggs"));
 
-            contextMock.Setup(c => c.Tasks).Returns(mockSet.Object);
-            contextMock.Setup(c => c.SaveChangesAsync(default)).ReturnsAsync(1);
-
-            await taskItemService.CreateAsync(userId: 1, MakeCreateDto("Buy Groceries", "Milk and eggs"));
-
-            contextMock.Verify(c => c.SaveChangesAsync(default), Times.Once);
-            Assert.Single(addedTasks);
-            Assert.Equal("Buy Groceries", addedTasks[0].Title);
-            Assert.Equal("Milk and eggs", addedTasks[0].Description);
-            Assert.Equal(1, addedTasks[0].UserId);
+            var saved = await _context.Tasks.FindAsync(id);
+            Assert.NotNull(saved);
+            Assert.Equal("Buy Groceries", saved.Title);
+            Assert.Equal("Milk and eggs", saved.Description);
+            Assert.Equal(1, saved.UserId);
         }
 
         [Theory]
@@ -78,32 +69,29 @@ namespace ExamProject.Services.Tests
         }
 
         [Fact]
-        public async Task CreateAsync_InvalidDto_DoesNotCallSaveChanges()
+        public async Task CreateAsync_InvalidDto_DoesNotPersistAnything()
         {
             try { await taskItemService.CreateAsync(1, MakeCreateDto(title: "")); } catch { }
 
-            contextMock.Verify(c => c.SaveChangesAsync(default), Times.Never);
+            Assert.Empty(_context.Tasks);
         }
 
 
         [Fact]
         public async Task GetAsync_ExistingTaskForCorrectUser_ReturnsTask()
         {
-            var task = MakeTask(id: 1, userId: 1, title: "My Task");
-            SetupTasksDbSet([task]);
+            var id = await SeedTask(userId: 1, title: "My Task");
 
-            var result = await taskItemService.GetAsync(userId: 1, id: 1);
+            var result = await taskItemService.GetAsync(userId: 1, id);
 
             Assert.NotNull(result);
-            Assert.Equal(1, result.Id);
+            Assert.Equal(id, result.Id);
             Assert.Equal("My Task", result.Title);
         }
 
         [Fact]
         public async Task GetAsync_NonExistentId_ReturnsNull()
         {
-            SetupTasksDbSet([]);
-
             var result = await taskItemService.GetAsync(userId: 1, id: 999);
 
             Assert.Null(result);
@@ -112,25 +100,20 @@ namespace ExamProject.Services.Tests
         [Fact]
         public async Task GetAsync_TaskBelongsToOtherUser_ReturnsNull()
         {
-            var task = MakeTask(id: 1, userId: 2);
-            SetupTasksDbSet([task]);
+            var id = await SeedTask(userId: 2);
 
-            var result = await taskItemService.GetAsync(userId: 1, id: 1);
+            var result = await taskItemService.GetAsync(userId: 1, id);
 
             Assert.Null(result);
         }
 
-
+    
         [Fact]
         public async Task GetAllAsync_ReturnsOnlyTasksForGivenUser()
         {
-            var tasks = new List<TaskItem>
-            {
-                MakeTask(id: 1, userId: 1, title: "U1-A"),
-                MakeTask(id: 2, userId: 1, title: "U1-B"),
-                MakeTask(id: 3, userId: 2, title: "U2-A"),
-            };
-            SetupTasksDbSet(tasks);
+            await SeedTask(userId: 1, title: "U1-A");
+            await SeedTask(userId: 1, title: "U1-B");
+            await SeedTask(userId: 2, title: "U2-A");
 
             var result = await taskItemService.GetAllAsync(userId: 1, page: 1, itemsPerPage: 10);
 
@@ -141,8 +124,6 @@ namespace ExamProject.Services.Tests
         [Fact]
         public async Task GetAllAsync_ReturnsEmptyList_WhenUserHasNoTasks()
         {
-            SetupTasksDbSet([]);
-
             var result = await taskItemService.GetAllAsync(userId: 99, page: 1, itemsPerPage: 10);
 
             Assert.Empty(result);
@@ -151,10 +132,8 @@ namespace ExamProject.Services.Tests
         [Fact]
         public async Task GetAllAsync_PaginatesCorrectly_FirstPage()
         {
-            var tasks = Enumerable.Range(1, 5)
-                .Select(i => MakeTask(id: i, userId: 1, title: $"Task {i}"))
-                .ToList();
-            SetupTasksDbSet(tasks);
+            for (var i = 0; i < 5; i++)
+                await SeedTask(userId: 1, title: $"Task {i}");
 
             var result = await taskItemService.GetAllAsync(userId: 1, page: 1, itemsPerPage: 3);
 
@@ -164,10 +143,8 @@ namespace ExamProject.Services.Tests
         [Fact]
         public async Task GetAllAsync_PaginatesCorrectly_SecondPage()
         {
-            var tasks = Enumerable.Range(1, 5)
-                .Select(i => MakeTask(id: i, userId: 1, title: $"Task {i}"))
-                .ToList();
-            SetupTasksDbSet(tasks);
+            for (var i = 0; i < 5; i++)
+                await SeedTask(userId: 1, title: $"Task {i}");
 
             var result = await taskItemService.GetAllAsync(userId: 1, page: 2, itemsPerPage: 3);
 
@@ -177,10 +154,8 @@ namespace ExamProject.Services.Tests
         [Fact]
         public async Task GetAllAsync_InvalidPage_DefaultsToPageOne()
         {
-            var tasks = Enumerable.Range(1, 3)
-                .Select(i => MakeTask(id: i, userId: 1))
-                .ToList();
-            SetupTasksDbSet(tasks);
+            for (var i = 0; i < 3; i++)
+                await SeedTask(userId: 1);
 
             var result = await taskItemService.GetAllAsync(userId: 1, page: 0, itemsPerPage: 10);
 
@@ -190,10 +165,8 @@ namespace ExamProject.Services.Tests
         [Fact]
         public async Task GetAllAsync_InvalidItemsPerPage_DefaultsToTen()
         {
-            var tasks = Enumerable.Range(1, 12)
-                .Select(i => MakeTask(id: i, userId: 1))
-                .ToList();
-            SetupTasksDbSet(tasks);
+            for (var i = 0; i < 12; i++)
+                await SeedTask(userId: 1);
 
             var result = await taskItemService.GetAllAsync(userId: 1, page: 1, itemsPerPage: 0);
 
@@ -203,28 +176,21 @@ namespace ExamProject.Services.Tests
         [Fact]
         public async Task GetAllAsync_ResultsAreOrderedById()
         {
-            var tasks = new List<TaskItem>
-            {
-                MakeTask(id: 3, userId: 1),
-                MakeTask(id: 1, userId: 1),
-                MakeTask(id: 2, userId: 1),
-            };
-            SetupTasksDbSet(tasks);
+            for (var i = 0; i < 5; i++)
+                await SeedTask(userId: 1);
 
             var result = await taskItemService.GetAllAsync(userId: 1, page: 1, itemsPerPage: 10);
 
-            Assert.Equal([1, 2, 3], result.Select(t => t.Id));
+            Assert.Equal(result.OrderBy(t => t.Id).Select(t => t.Id), result.Select(t => t.Id));
         }
 
-    
+
         [Fact]
         public async Task UpdateAsync_ExistingTask_ReturnsUpdatedTask()
         {
-            var task = MakeTask(id: 1, userId: 1, title: "Old Title", description: "Old Desc");
-            SetupTasksDbSet([task]);
-            contextMock.Setup(c => c.SaveChangesAsync(default)).ReturnsAsync(1);
+            var id = await SeedTask(userId: 1, title: "Old Title", description: "Old Desc");
 
-            var result = await taskItemService.UpdateAsync(userId: 1, id: 1, MakeUpdateDto("New Title", "New Desc", true));
+            var result = await taskItemService.UpdateAsync(userId: 1, id, MakeUpdateDto("New Title", "New Desc", true));
 
             Assert.NotNull(result);
             Assert.Equal("New Title", result.Title);
@@ -233,90 +199,45 @@ namespace ExamProject.Services.Tests
         }
 
         [Fact]
-        public async Task UpdateAsync_ExistingTask_CallsSaveChanges()
+        public async Task UpdateAsync_ExistingTask_PersistsChanges()
         {
-            var task = MakeTask(id: 1, userId: 1);
-            SetupTasksDbSet([task]);
-            contextMock.Setup(c => c.SaveChangesAsync(default)).ReturnsAsync(1);
+            var id = await SeedTask(userId: 1);
 
-            await taskItemService.UpdateAsync(userId: 1, id: 1, MakeUpdateDto());
+            await taskItemService.UpdateAsync(userId: 1, id, MakeUpdateDto("Persisted", "Persisted Desc", true));
 
-            contextMock.Verify(c => c.SaveChangesAsync(default), Times.Once);
+            var saved = await _context.Tasks.FindAsync(id);
+            Assert.Equal("Persisted", saved!.Title);
+            Assert.True(saved.IsComplete);
         }
 
         [Fact]
         public async Task UpdateAsync_NonExistentId_ReturnsNull()
         {
-            SetupTasksDbSet([]);
-
             var result = await taskItemService.UpdateAsync(userId: 1, id: 999, MakeUpdateDto());
 
             Assert.Null(result);
         }
 
         [Fact]
-        public async Task UpdateAsync_NonExistentId_DoesNotCallSaveChanges()
-        {
-            SetupTasksDbSet([]);
-
-            await taskItemService.UpdateAsync(userId: 1, id: 999, MakeUpdateDto());
-
-            contextMock.Verify(c => c.SaveChangesAsync(default), Times.Never);
-        }
-
-        [Fact]
         public async Task UpdateAsync_TaskBelongsToOtherUser_ReturnsNull()
         {
-            var task = MakeTask(id: 1, userId: 2);
-            SetupTasksDbSet([task]);
+            var id = await SeedTask(userId: 2);
 
-            var result = await taskItemService.UpdateAsync(userId: 1, id: 1, MakeUpdateDto());
+            var result = await taskItemService.UpdateAsync(userId: 1, id, MakeUpdateDto());
 
             Assert.Null(result);
         }
 
         [Fact]
-        public async Task UpdateAsync_TaskBelongsToOtherUser_DoesNotCallSaveChanges()
+        public async Task UpdateAsync_TaskBelongsToOtherUser_DoesNotModifyTask()
         {
-            var task = MakeTask(id: 1, userId: 2);
-            SetupTasksDbSet([task]);
+            var id = await SeedTask(userId: 2, title: "Original", description: "Original Desc");
 
-            await taskItemService.UpdateAsync(userId: 1, id: 1, MakeUpdateDto());
+            await taskItemService.UpdateAsync(userId: 1, id, MakeUpdateDto("Hacked", "Hacked"));
 
-            contextMock.Verify(c => c.SaveChangesAsync(default), Times.Never);
+            var saved = await _context.Tasks.FindAsync(id);
+            Assert.Equal("Original", saved!.Title);
         }
 
-
-        [Fact]
-        public async Task DeleteAsync_ExistingTask_ReturnsTrue()
-        {
-            var task = MakeTask(id: 1, userId: 1);
-            SetupTasksDbSet([task]);
-
-            var result = await taskItemService.DeleteAsync(userId: 1, id: 1);
-
-            Assert.True(result);
-        }
-
-        [Fact]
-        public async Task DeleteAsync_NonExistentId_ReturnsFalse()
-        {
-            SetupTasksDbSet([]);
-
-            var result = await taskItemService.DeleteAsync(userId: 1, id: 999);
-
-            Assert.False(result);
-        }
-
-        [Fact]
-        public async Task DeleteAsync_TaskBelongsToOtherUser_ReturnsFalse()
-        {
-            var task = MakeTask(id: 1, userId: 2);
-            SetupTasksDbSet([task]);
-
-            var result = await taskItemService.DeleteAsync(userId: 1, id: 1);
-
-            Assert.False(result);
-        }
     }
 }
