@@ -50,6 +50,7 @@ builder.Services.AddDbContext<ExamProjectDbContext>(options =>
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<ITaskItemService, TaskItemService>();
 
 builder.Services.AddCors(options =>
 {
